@@ -26,3 +26,34 @@ resource "aws_subnet" "subnets" {
     Name = each.key
   }
 }
+
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "mojix-igw"
+  }
+}
+
+resource "aws_route_table" "web_rt" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
+
+  tags = {
+    Name = "web_rt"
+  }
+}
+
+resource "aws_route_table_association" "web_rt_association" {
+  for_each = {
+    "sn-web-A"= local.subnets.sn-web-A
+    "sn-web-B"= local.subnets.sn-web-B
+    "sn-web-C"= local.subnets.sn-web-C
+  }
+  subnet_id      = aws_subnet.subnets["${each.key}"].id
+  route_table_id = aws_route_table.web_rt.id
+}
